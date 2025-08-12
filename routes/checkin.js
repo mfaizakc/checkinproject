@@ -2,57 +2,64 @@ const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const QRCode = require('qrcode');
 const db = require('../db/db');
+
 const router = express.Router();
 
-// Home page to generate QR
-router.get('/', async (req, res) => {
+// Home page - shows a button to generate QR
+router.get('/', (req, res) => {
+  res.render('index');
+});
+
+// Generate a QR page (creates a pending token row)
+router.get('/generate', async (req, res) => {
+  try {
     const token = uuidv4();
 
-    // Simulate a user (replace with Singpass login later)
-    const userId = 'user123';
+    // Simulated user - replace with real Singpass identity after integration
+    const userId = 'SIMULATED_USER';
 
-    const pool = await db.pool;
-    await pool.request()
-        .input('userId', db.sql.NVarChar, userId)
-        .input('token', db.sql.NVarChar, token)
-        .query(`INSERT INTO CheckinEvents (UserId, Token, Type) VALUES (@userId, @token, 'check-in')`);
 
-    const qrUrl = `http://localhost:3000/scan?token=${token}`;
-    const qrData = await QRCode.toDataURL(qrUrl);
+  // Use PC's LAN IP for QR code URL so it can be accessed from other devices on the network
+  const qrUrl = `${req.protocol}://10.64.21.111/scan?token=${token}`;
+  const qrData = await QRCode.toDataURL(qrUrl);
 
-    res.render('qr', { qrData });
+  res.render('qr', { qrData, token });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error generating QR');
+  }
 });
 
-// GET route to show location page after QR scan
+// GET scan landing page - captures location client-side
 router.get('/scan', (req, res) => {
-    const token = req.query.token;
-    res.render('location', { token });
+  const token = req.query.token;
+  if (!token) return res.status(400).send('Missing token');
+  res.render('location', { token });
 });
 
-// Scan route (simulate Singpass login)
-// New POST endpoint for check-in with location
+// POST scan - receives token + lat/lng and marks token used
 router.post('/scan', async (req, res) => {
+  try {
     const { token, latitude, longitude } = req.body;
+    if (!token) return res.status(400).send('Missing token');
 
     const pool = await db.pool;
-    const result = await pool.request()
-        .input('token', db.sql.NVarChar, token)
-        .query('SELECT * FROM CheckinEvents WHERE Token = @token AND Status = \'active\'');
+    // Simulated user - replace with real Singpass identity after integration
+    const userId = 'SIMULATED_USER';
 
-    if (result.recordset.length === 0) {
-        return res.status(400).send('Invalid or expired token.');
-    }
-
-    // Update with location and mark as used
+    // Insert the check-in event only when user checks in
     await pool.request()
-        .input('token', db.sql.NVarChar, token)
-        .input('lat', db.sql.Float, latitude)
-        .input('lng', db.sql.Float, longitude)
-        .query(`UPDATE CheckinEvents 
-                SET Status = 'used', Latitude = @lat, Longitude = @lng 
-                WHERE Token = @token`);
+      .input('userId', db.sql.NVarChar, userId)
+      .input('token', db.sql.NVarChar, token)
+      .input('lat', db.sql.Float, latitude)
+      .input('lng', db.sql.Float, longitude)
+      .query(`INSERT INTO CheckinEvents (UserId, Token, Type, Status, Latitude, Longitude) VALUES (@userId, @token, 'check-in', 'used', @lat, @lng)`);
 
-    res.send('Check-in recorded with location.');
+    res.send('Check-in recorded. Thank you!');
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
 });
 
 module.exports = router;

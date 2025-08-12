@@ -1,16 +1,18 @@
-const sql = require('mssql');
-
-const config = {
-    user: 'your_user',
-    password: 'your_password',
-    server: 'localhost', // or your server name
-    database: 'YourDatabase',
-    options: {
-        trustServerCertificate: true,
+////////////DATABASE///////////
+const Checklist_DB = {
+    server: '10.64.2.18',
+    authentication: {
+      type: 'default',
+      options: {
+        userName: 'akcAutomation',
+        password: 'SingaporeAKC1*'
+      }
     },
+    options: {
+      database: 'CheckInDB',
+      encrypt: false,
+      trustServerCertificate: true
+    }
 };
 
-module.exports = {
-    pool: new sql.ConnectionPool(config).connect(),
-    sql
-};
+module.exports = Checklist_DB;
