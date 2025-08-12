@@ -23,9 +23,16 @@ router.get('/', async (req, res) => {
     res.render('qr', { qrData });
 });
 
-// Scan route (simulate Singpass login)
-router.get('/scan', async (req, res) => {
+// GET route to show location page after QR scan
+router.get('/scan', (req, res) => {
     const token = req.query.token;
+    res.render('location', { token });
+});
+
+// Scan route (simulate Singpass login)
+// New POST endpoint for check-in with location
+router.post('/scan', async (req, res) => {
+    const { token, latitude, longitude } = req.body;
 
     const pool = await db.pool;
     const result = await pool.request()
@@ -33,15 +40,19 @@ router.get('/scan', async (req, res) => {
         .query('SELECT * FROM CheckinEvents WHERE Token = @token AND Status = \'active\'');
 
     if (result.recordset.length === 0) {
-        return res.send('Invalid or expired token.');
+        return res.status(400).send('Invalid or expired token.');
     }
 
-    // Simulate mark as used
+    // Update with location and mark as used
     await pool.request()
         .input('token', db.sql.NVarChar, token)
-        .query('UPDATE CheckinEvents SET Status = \'used\' WHERE Token = @token');
+        .input('lat', db.sql.Float, latitude)
+        .input('lng', db.sql.Float, longitude)
+        .query(`UPDATE CheckinEvents 
+                SET Status = 'used', Latitude = @lat, Longitude = @lng 
+                WHERE Token = @token`);
 
-    res.send('Check-in recorded successfully.');
+    res.send('Check-in recorded with location.');
 });
 
 module.exports = router;
