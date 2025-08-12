@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Check-In Location</title>
+</head>
+<body>
+    <h1>Completing Check-In...</h1>
+    <script>
+        const token = "<%= token %>";
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition((position) => {
+                fetch('/scan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        token: token,
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude
+                    })
+                })
+                .then(res => res.text())
+                .then(msg => document.body.innerHTML = `<h2>${msg}</h2>`)
+                .catch(err => document.body.innerHTML = `<h2>Error: ${err}</h2>`);
+            }, () => {
+                document.body.innerHTML = "<h2>Location access denied.</h2>";
+            });
+        } else {
+            document.body.innerHTML = "<h2>Geolocation not supported.</h2>";
+        }
+    </script>
+</body>
+</html>
