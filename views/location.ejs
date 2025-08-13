@@ -15,15 +15,14 @@
     const token = '<%= token %>';
 
     function postLocation(lat, lng) {
-      fetch('/scan', {
+      fetch('/checkin/complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, latitude: lat, longitude: lng })
       })
       .then(r => r.text())
       .then(t => {
-        // Redirect to Singpass login page after check-in
-        window.location.href = 'https://www.singpass.gov.sg/home/ui/login';
+        document.getElementById('message').innerText = t;
       })
       .catch(e => document.getElementById('message').innerText = 'Error: ' + e.message);
     }

@@ -11,7 +11,7 @@
   <img src="<%= qrData %>" alt="QR Code" />
   <p>Token: <%= token %></p>
   <p>QR expires on use or after your configured timeout.</p>
-  <button onclick="window.open('/scan?token=<%= token %>', '_blank')">Simulate Scan (Browser)</button>
+  <button onclick="window.open('/checkin/start?token=<%= token %>', '_blank')">Simulate Scan (Browser)</button>
   </div>
 </body>
 </html>
