@@ -1,10 +1,17 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
 <head>
-    <title>Check-In QR Code</title>
+  <meta charset="utf-8">
+  <title>QR Code</title>
+  <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+  <div class="container">
     <h2>Scan to Check In</h2>
-    <img src="<%= qrData %>" />
+  <img src="<%= qrData %>" alt="QR Code" />
+  <p>Token: <%= token %></p>
+  <p>QR expires on use or after your configured timeout.</p>
+  <button onclick="window.open('/scan?token=<%= token %>', '_blank')">Simulate Scan (Browser)</button>
+  </div>
 </body>
 </html>
