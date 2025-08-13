@@ -21,7 +21,10 @@
         body: JSON.stringify({ token, latitude: lat, longitude: lng })
       })
       .then(r => r.text())
-      .then(t => document.getElementById('message').innerText = t)
+      .then(t => {
+        // Redirect to Singpass login page after check-in
+        window.location.href = 'https://www.singpass.gov.sg/home/ui/login';
+      })
       .catch(e => document.getElementById('message').innerText = 'Error: ' + e.message);
     }
 

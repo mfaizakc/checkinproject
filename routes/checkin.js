@@ -14,19 +14,44 @@ router.get('/', (req, res) => {
 router.get('/generate', async (req, res) => {
   try {
     const token = uuidv4();
+    const pool = await db.pool;
+    // Set expiry to 2 minutes from now
+    const expiresAt = new Date(Date.now() + 2 * 60 * 1000);
+    // Store the token in CheckinTokens table
+    await pool.request()
+      .input('token', db.sql.NVarChar, token)
+      .input('expiresAt', db.sql.DateTime, expiresAt)
+      .query('INSERT INTO CheckinTokens (Token, ExpiresAt) VALUES (@token, @expiresAt)');
 
-    // Simulated user - replace with real Singpass identity after integration
-    const userId = 'SIMULATED_USER';
+    // Generate QR code for the new flow
+    const qrUrl = `${req.protocol}://10.64.21.111/checkin/start?token=${token}`;
+    const qrData = await QRCode.toDataURL(qrUrl);
 
-
-  // Use PC's LAN IP for QR code URL so it can be accessed from other devices on the network
-  const qrUrl = `${req.protocol}://10.64.21.111/scan?token=${token}`;
-  const qrData = await QRCode.toDataURL(qrUrl);
-
-  res.render('qr', { qrData, token });
+    res.render('qr', { qrData, token });
   } catch (err) {
     console.error(err);
     res.status(500).send('Error generating QR');
+  }
+});
+
+// Start check-in: validate token and redirect to Singpass
+router.get('/checkin/start', async (req, res) => {
+  const token = req.query.token;
+  if (!token) return res.status(400).send('Missing token');
+  try {
+    const pool = await db.pool;
+    const result = await pool.request()
+      .input('token', db.sql.NVarChar, token)
+      .query('SELECT TOP 1 * FROM CheckinTokens WHERE Token = @token AND Used = 0 AND ExpiresAt > GETDATE()');
+    if (!result.recordset || result.recordset.length === 0) {
+      return res.status(400).send('Invalid or expired QR code.');
+    }
+    // In production, redirect to Singpass OIDC login with state=token
+    // For now, just simulate by redirecting to Singpass login page
+    res.redirect('https://www.singpass.gov.sg/home/ui/login');
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
   }
 });
 

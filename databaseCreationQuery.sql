@@ -1,3 +1,6 @@
+DROP TABLE IF EXISTS CheckinEvents;
+DROP TABLE IF EXISTS CheckinTokens;
+
 CREATE TABLE CheckinEvents (
     Id INT IDENTITY PRIMARY KEY,
     UserId NVARCHAR(100),
@@ -7,4 +10,12 @@ CREATE TABLE CheckinEvents (
     Status NVARCHAR(20) DEFAULT 'active',
     Latitude FLOAT NULL,
     Longitude FLOAT NULL
+);
+
+CREATE TABLE CheckinTokens (
+    Id INT IDENTITY PRIMARY KEY,
+    Token NVARCHAR(100) UNIQUE NOT NULL,
+    CreatedAt DATETIME DEFAULT GETDATE(),
+    ExpiresAt DATETIME NOT NULL,
+    Used BIT DEFAULT 0
 );
