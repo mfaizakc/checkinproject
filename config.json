@@ -1,0 +1,7 @@
+{
+  "CLIENT_ID": "sDRIq83pbDFJyJHrd7hIBtEX51RPVDbE",
+  "REDIRECT_URI": "https://staffattendance.sg-akc.com/callback",
+  "AUTH_URL": "https://stg-id.singpass.gov.sg/auth",
+  "TOKEN_URL": "https://stg-id.singpass.gov.sg/token",
+  "USERINFO_URL": "https://stg-id.singpass.gov.sg/userinfo"
+}

@@ -1,3 +1,4 @@
+
 const express = require('express');
 const axios = require('axios');
 const qs = require('qs');
@@ -10,23 +11,20 @@ const fs = require('fs');
 const path = require('path');
 const jose = require('node-jose');
 
+// Load config from config.json
+const config = require('../config.json');
+
 // Load ES256 private key for JWT client_assertion
 const privateKey = fs.readFileSync(path.join(__dirname, '../signing-private.pem'), 'utf8');
 const encryptionKey = fs.readFileSync(path.join(__dirname, '../encryption-private.pem'), 'utf8');
-// Configure these via environment variables
-const CLIENT_ID = process.env.SINGPASS_CLIENT_ID || 'sDRIq83pbDFJyJHrd7hIBtEX51RPVDbE';
-const REDIRECT_URI = process.env.SINGPASS_REDIRECT_URI || 'https://staffattendance.sg-akc.com/callback';
 
-const AUTH_URL = process.env.SINGPASS_AUTH_URL || 'https://stg-id.singpass.gov.sg/auth';
-const TOKEN_URL = process.env.SINGPASS_TOKEN_URL || 'https://stg-id.singpass.gov.sg/token';
-const USERINFO_URL = process.env.SINGPASS_USERINFO_URL || 'https://stg-id.singpass.gov.sg/userinfo';
+const CLIENT_ID = config.CLIENT_ID;
+const REDIRECT_URI = config.REDIRECT_URI;
+const AUTH_URL = config.AUTH_URL;
+const TOKEN_URL = config.TOKEN_URL;
 
 // Redirect page: when user clicks the button, go here, then redirect to Singpass login
 router.get('/redirect', (req, res) => {
-  const CLIENT_ID = process.env.SINGPASS_CLIENT_ID || 'sDRIq83pbDFJyJHrd7hIBtEX51RPVDbE';
-  const REDIRECT_URI = process.env.SINGPASS_REDIRECT_URI || 'https://staffattendance.sg-akc.com/callback';
-  const AUTH_URL = process.env.SINGPASS_AUTH_URL || 'https://stg-id.singpass.gov.sg/auth';
-
   // Generate PKCE and state
   function base64url(input) {
     return input.toString('base64')
@@ -88,8 +86,6 @@ router.get('/callback', async (req, res) => {
     }
     const { codeVerifier, nonce, state } = req.session.auth;
     console.log('Session PKCE and state:', { codeVerifier, nonce, state });
-    const CLIENT_ID = process.env.SINGPASS_CLIENT_ID || 'sDRIq83pbDFJyJHrd7hIBtEX51RPVDbE';
-    const REDIRECT_URI = process.env.SINGPASS_REDIRECT_URI || 'https://staffattendance.sg-akc.com/callback';
     console.log('CLIENT_ID:', CLIENT_ID);
     console.log('REDIRECT_URI:', REDIRECT_URI);
 
@@ -208,9 +204,24 @@ router.get('/callback', async (req, res) => {
     } catch (e) {
       console.log('Failed to decode ID token:', e);
     }
-    // Redirect to success page after authentication
-    return res.redirect('/singpass-success.html');
-
+    const pool = await db.pool;
+    // Check if user has checked in within the last hour
+    const checkResult = await pool.request()
+      .input('NRIC', db.sql.NVarChar(20), req.session.user.nric)
+      .query(`
+        SELECT TOP 1 Timestamp 
+        FROM CheckinEvents 
+        WHERE NRIC = @NRIC 
+          AND Timestamp > DATEADD(hour, -1, GETDATE())
+        ORDER BY Timestamp DESC
+      `);
+    if (checkResult.recordset.length > 0) {
+      console.log(`User ${req.session.user.nric} has already checked in within the last hour.`);
+      return res.redirect('/already-checkedin.html');
+    } else {
+      // Redirect to success page after authentication
+      return res.redirect('/singpass-success.html');
+    }
   } catch (error) {
     console.error('Error during authentication', error);
     res.status(500).send('Authentication error');
@@ -226,20 +237,20 @@ router.post('/checkin/location', async (req, res) => {
   try {
     const pool = await db.pool;
     // Check if user has checked in within the last hour
-    const checkResult = await pool.request()
-      .input('NRIC', db.sql.NVarChar(20), user.nric)
-      .query(`
-        SELECT TOP 1 Timestamp 
-        FROM CheckinEvents 
-        WHERE NRIC = @NRIC 
-          AND Timestamp > DATEADD(hour, -1, GETDATE())
-        ORDER BY Timestamp DESC
-      `);
+    // const checkResult = await pool.request()
+    //   .input('NRIC', db.sql.NVarChar(20), user.nric)
+    //   .query(`
+    //     SELECT TOP 1 Timestamp 
+    //     FROM CheckinEvents 
+    //     WHERE NRIC = @NRIC 
+    //       AND Timestamp > DATEADD(hour, -1, GETDATE())
+    //     ORDER BY Timestamp DESC
+    //   `);
 
-    if (checkResult.recordset.length > 0) {
-      console.log(`User ${user.nric} has already checked in within the last hour.`);
-      return res.status(200).send('Already checked in within the last hour.');
-    } else {
+    // if (checkResult.recordset.length > 0) {
+    //   console.log(`User ${user.nric} has already checked in within the last hour.`);
+    //   return res.redirect('/already-checkedin.html');
+    // } else {
       await pool.request()
         .input('NRIC', db.sql.NVarChar(20), user.nric)
         .input('UUID', db.sql.NVarChar(50), user.uuid)
@@ -248,7 +259,7 @@ router.post('/checkin/location', async (req, res) => {
         .query('INSERT INTO CheckinEvents (NRIC, UUID, Latitude, Longitude, Timestamp) VALUES (@NRIC, @UUID, @Latitude, @Longitude, GETUTCDATE())');
       console.log('Check-in event inserted for NRIC:', user.nric, 'Latitude:', latitude, 'Longitude:', longitude);
       return res.status(200).send('Check-in event inserted.');
-    }
+    // }
   } catch (err) {
     console.error('Failed to save location:', err);
     res.status(500).send('Failed to save location');
