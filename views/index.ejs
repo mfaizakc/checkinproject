@@ -4,12 +4,46 @@
   <meta charset="utf-8">
   <title>Check-in Home</title>
   <link rel="stylesheet" href="/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap" rel="stylesheet">
+  <style>
+    .singpass-btn {
+      display: inline-flex;
+      align-items: center;
+      background: #FFFFFF; /* Red fill */
+      border: 1px solid #C8C9CC ;
+      border-radius: 8px;
+      padding: 10px 24px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+      font-size: 16px;
+      font-family: 'Poppins', Arial, Helvetica, sans-serif;
+      font-weight: 700;
+      color: #000000;
+      margin-top: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .singpass-btn:hover {
+      background: #C8C9CC;
+    }
+    .singpass-btn img {
+      height: 14px;
+      margin-left: 4px;
+      margin-top: 18px; /* Adjust this value as needed */
+      display: inline-block;
+      vertical-align: middle;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
-    <h1>Workplace Check-in</h1>
-    <p>Generate a QR code for scanning at the workplace.</p>
-  <a class="btn" href="/redirect">Login with Singpass</a>
+    <h1>AKC STAFF ATTENDANCE CHECK IN</h1>
+    <img src="/AKC_Logo.jpg" alt="AKC logo">
+    <p>Log in using Singpass to check in your attendance.</p>
+    <a class="singpass-btn" href="/redirect" aria-label="sing pass">
+      Log in with
+      <img src="/singpass_logo_fullcolours.png" alt="Singpass logo">
+    </a>
   </div>
 </body>
 </html>
