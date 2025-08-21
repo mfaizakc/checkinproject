@@ -184,11 +184,47 @@ router.get('/callback', async (req, res) => {
         console.log('Decoded id token payload:', accessTokenPayload);
         // Extract NRIC (s=...) from sub
         if (accessTokenPayload.sub) {
-          const match = accessTokenPayload.sub.match(/s=([^,]+)/);
-          if (match) {
-            console.log('Extracted NRIC:', match[1]);
+          const nricMatch = accessTokenPayload.sub.match(/s=([^,]+)/);
+          const uuidMatch = accessTokenPayload.sub.match(/u=([^,]+)/);
+          let nric = null;
+          let uuid = null;
+          if (nricMatch) {
+            nric = nricMatch[1];
+            console.log('Extracted NRIC:', nric);
           } else {
             console.log('No NRIC found in sub.');
+          }
+          if (uuidMatch) {
+            uuid = uuidMatch[1];
+            console.log('Extracted UUID:', uuid);
+          }
+          // Insert check-in event into database if NRIC is found
+          if (nric) {
+            try {
+              const pool = await db.pool;
+              // Check if user has checked in within the last hour
+              const checkResult = await pool.request()
+                .input('NRIC', db.sql.NVarChar(20), nric)
+                .query(`
+                  SELECT TOP 1 Timestamp 
+                  FROM CheckinEvents 
+                  WHERE NRIC = @NRIC 
+                    AND Timestamp > DATEADD(hour, -1, GETDATE())
+                  ORDER BY Timestamp DESC
+                `);
+
+              if (checkResult.recordset.length > 0) {
+                console.log(`User ${nric} has already checked in within the last hour.`);
+              } else {
+                await pool.request()
+                  .input('NRIC', db.sql.NVarChar(20), nric)
+                  .input('UUID', db.sql.NVarChar(50), uuid)
+                  .query('INSERT INTO CheckinEvents (NRIC, UUID) VALUES (@NRIC, @UUID)');
+                console.log('Check-in event inserted for NRIC:', nric);
+              }
+            } catch (dbErr) {
+              console.error('Failed to insert check-in event:', dbErr);
+            }
           }
         }
       } else {

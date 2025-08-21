@@ -1,21 +1,11 @@
 DROP TABLE IF EXISTS CheckinEvents;
-DROP TABLE IF EXISTS CheckinTokens;
 
 CREATE TABLE CheckinEvents (
     Id INT IDENTITY PRIMARY KEY,
-    UserId NVARCHAR(100),
-    Token NVARCHAR(100),
+    NRIC NVARCHAR(20) NOT NULL,         -- s=... value from sub
+    UUID NVARCHAR(50) NULL,             -- u=... value from sub (optional, for traceability)
     Timestamp DATETIME DEFAULT GETDATE(),
-    Type NVARCHAR(50),
     Status NVARCHAR(20) DEFAULT 'active',
     Latitude FLOAT NULL,
     Longitude FLOAT NULL
-);
-
-CREATE TABLE CheckinTokens (
-    Id INT IDENTITY PRIMARY KEY,
-    Token NVARCHAR(100) UNIQUE NOT NULL,
-    CreatedAt DATETIME DEFAULT GETDATE(),
-    ExpiresAt DATETIME NOT NULL,
-    Used BIT DEFAULT 0
 );
