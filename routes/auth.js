@@ -235,22 +235,7 @@ router.post('/checkin/location', async (req, res) => {
     return res.status(401).send('Not authenticated');
   }
   try {
-    const pool = await db.pool;
-    // Check if user has checked in within the last hour
-    // const checkResult = await pool.request()
-    //   .input('NRIC', db.sql.NVarChar(20), user.nric)
-    //   .query(`
-    //     SELECT TOP 1 Timestamp 
-    //     FROM CheckinEvents 
-    //     WHERE NRIC = @NRIC 
-    //       AND Timestamp > DATEADD(hour, -1, GETDATE())
-    //     ORDER BY Timestamp DESC
-    //   `);
-
-    // if (checkResult.recordset.length > 0) {
-    //   console.log(`User ${user.nric} has already checked in within the last hour.`);
-    //   return res.redirect('/already-checkedin.html');
-    // } else {
+    const pool = await db.pool
       await pool.request()
         .input('NRIC', db.sql.NVarChar(20), user.nric)
         .input('UUID', db.sql.NVarChar(50), user.uuid)
@@ -259,7 +244,6 @@ router.post('/checkin/location', async (req, res) => {
         .query('INSERT INTO CheckinEvents (NRIC, UUID, Latitude, Longitude, Timestamp) VALUES (@NRIC, @UUID, @Latitude, @Longitude, GETUTCDATE())');
       console.log('Check-in event inserted for NRIC:', user.nric, 'Latitude:', latitude, 'Longitude:', longitude);
       return res.status(200).send('Check-in event inserted.');
-    // }
   } catch (err) {
     console.error('Failed to save location:', err);
     res.status(500).send('Failed to save location');
