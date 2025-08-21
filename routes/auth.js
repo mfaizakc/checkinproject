@@ -182,12 +182,23 @@ router.get('/callback', async (req, res) => {
       if (parts.length === 3) {
         accessTokenPayload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf8'));
         console.log('Decoded id token payload:', accessTokenPayload);
+        // Extract NRIC (s=...) from sub
+        if (accessTokenPayload.sub) {
+          const match = accessTokenPayload.sub.match(/s=([^,]+)/);
+          if (match) {
+            console.log('Extracted NRIC:', match[1]);
+          } else {
+            console.log('No NRIC found in sub.');
+          }
+        }
       } else {
         console.log('ID token is not a JWT.');
       }
     } catch (e) {
       console.log('Failed to decode ID token:', e);
     }
+    // Redirect to success page after authentication
+    return res.redirect('/singpass-success.html');
 
   } catch (error) {
     console.error('Error during authentication', error);
