@@ -14,6 +14,7 @@
     "express-session": "^1.18.2",
     "jose": "^6.0.12",
     "mssql": "^9.3.2",
+    "node-jose": "^2.2.0",
     "openid-client": "^6.6.4",
     "qrcode": "^1.5.1",
     "uuid": "^9.0.0"

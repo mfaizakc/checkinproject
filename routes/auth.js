@@ -8,12 +8,13 @@ const crypto = require('crypto');
 const router = express.Router();
 const fs = require('fs');
 const path = require('path');
-const { importPKCS8, jwtDecrypt } = require('jose');
+const jose = require('node-jose');
+
 // Load ES256 private key for JWT client_assertion
 const privateKey = fs.readFileSync(path.join(__dirname, '../signing-private.pem'), 'utf8');
 const encryptionKey = fs.readFileSync(path.join(__dirname, '../encryption-private.pem'), 'utf8');
 // Configure these via environment variables
-const CLIENT_ID = process.env.SINGPASS_CLIENT_ID || 'n2HwXn8RIQTEJGRDwimShUZtlJuFu5Eq';
+const CLIENT_ID = process.env.SINGPASS_CLIENT_ID || 'sDRIq83pbDFJyJHrd7hIBtEX51RPVDbE';
 const REDIRECT_URI = process.env.SINGPASS_REDIRECT_URI || 'https://staffattendance.sg-akc.com/callback';
 
 const AUTH_URL = process.env.SINGPASS_AUTH_URL || 'https://stg-id.singpass.gov.sg/auth';
@@ -22,7 +23,7 @@ const USERINFO_URL = process.env.SINGPASS_USERINFO_URL || 'https://stg-id.singpa
 
 // Redirect page: when user clicks the button, go here, then redirect to Singpass login
 router.get('/redirect', (req, res) => {
-  const CLIENT_ID = process.env.SINGPASS_CLIENT_ID || 'n2HwXn8RIQTEJGRDwimShUZtlJuFu5Eq';
+  const CLIENT_ID = process.env.SINGPASS_CLIENT_ID || 'sDRIq83pbDFJyJHrd7hIBtEX51RPVDbE';
   const REDIRECT_URI = process.env.SINGPASS_REDIRECT_URI || 'https://staffattendance.sg-akc.com/callback';
   const AUTH_URL = process.env.SINGPASS_AUTH_URL || 'https://stg-id.singpass.gov.sg/auth';
 
@@ -87,7 +88,7 @@ router.get('/callback', async (req, res) => {
     }
     const { codeVerifier, nonce, state } = req.session.auth;
     console.log('Session PKCE and state:', { codeVerifier, nonce, state });
-    const CLIENT_ID = process.env.SINGPASS_CLIENT_ID || 'n2HwXn8RIQTEJGRDwimShUZtlJuFu5Eq';
+    const CLIENT_ID = process.env.SINGPASS_CLIENT_ID || 'sDRIq83pbDFJyJHrd7hIBtEX51RPVDbE';
     const REDIRECT_URI = process.env.SINGPASS_REDIRECT_URI || 'https://staffattendance.sg-akc.com/callback';
     console.log('CLIENT_ID:', CLIENT_ID);
     console.log('REDIRECT_URI:', REDIRECT_URI);
@@ -156,10 +157,28 @@ router.get('/callback', async (req, res) => {
     }
     console.log('Access token:', accessToken);
 
+    async function decryptJWE() {
+    // Create a keystore and import the private key
+    const keystore = jose.JWK.createKeyStore();
+    const key = await keystore.add(encryptionKey, 'pem');
+
+    // Decrypt the JWE
+    const result = await jose.JWE.createDecrypt(key).decrypt(idToken);
+
+    // Convert payload to string
+    const payload = result.payload.toString('utf8');
+
+    console.log('Header:', result.header);
+    console.log('Payload:', payload);
+    return payload;
+  }
+  
+
     // Decode JWT access token (without verifying signature) for inspection
     let accessTokenPayload = null;
+    const jwtString = await decryptJWE();
     try {
-      const parts = idToken.split('.');
+      const parts = jwtString.split('.');
       if (parts.length === 3) {
         accessTokenPayload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf8'));
         console.log('Decoded id token payload:', accessTokenPayload);
