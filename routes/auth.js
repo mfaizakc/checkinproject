@@ -245,7 +245,7 @@ router.post('/checkin/location', async (req, res) => {
         .input('UUID', db.sql.NVarChar(50), user.uuid)
         .input('Latitude', db.sql.Float, latitude)
         .input('Longitude', db.sql.Float, longitude)
-        .query('INSERT INTO CheckinEvents (NRIC, UUID, Latitude, Longitude) VALUES (@NRIC, @UUID, @Latitude, @Longitude)');
+        .query('INSERT INTO CheckinEvents (NRIC, UUID, Latitude, Longitude, Timestamp) VALUES (@NRIC, @UUID, @Latitude, @Longitude, GETUTCDATE())');
       console.log('Check-in event inserted for NRIC:', user.nric, 'Latitude:', latitude, 'Longitude:', longitude);
       return res.status(200).send('Check-in event inserted.');
     }

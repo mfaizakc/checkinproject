@@ -3,6 +3,7 @@ const path = require('path');
 const bodyParser = require('body-parser');
 const checkinRoutes = require('./routes/checkin');
 const authRoutes = require('./routes/auth');
+const attRoutes = require('./routes/attendance');
 
 const app = express();
 const session = require('express-session');
@@ -26,6 +27,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use('/', checkinRoutes);
 app.use('/', authRoutes);
+app.use('/', attRoutes);
+
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendance Records</title>
+  <link rel="stylesheet" href="/attstyle.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap" rel="stylesheet">
+  <style>
+    .filter-bar {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .filter-bar input, .filter-bar button {
+      padding: 8px 12px;
+      border-radius: 4px;
+      border: 1px solid #444;
+      font-size: 15px;
+      font-family: 'Poppins', Arial, Helvetica, sans-serif;
+      background: #23272f;
+      color: #f5f6fa;
+    }
+    /* Make icons in filter bar white */
+    .filter-bar input[type="date"]::-webkit-calendar-picker-indicator,
+    .filter-bar input[type="search"]::-webkit-search-cancel-button,
+    .filter-bar input[type="search"]::-webkit-search-decoration {
+      filter: invert(1);
+    }
+    .filter-bar input[type="date"]::-ms-input-placeholder,
+    .filter-bar input[type="date"]::placeholder {
+      color: #f5f6fa;
+    }
+    .filter-bar button {
+      background: #F4333D;
+      color: #fff;
+      border: none;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .filter-bar button:hover {
+      background: #ff232e;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      background: #23272f;
+      color: #f5f6fa;
+      font-family: 'Poppins', Arial, Helvetica, sans-serif;
+    }
+    th, td {
+      padding: 10px 8px;
+      border-bottom: 1px solid #444;
+      text-align: left;
+    }
+    th {
+      background: #18191a;
+      font-weight: 700;
+    }
+    tr:last-child td {
+      border-bottom: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Attendance Records</h1>
+    <form class="filter-bar" id="filterForm" onsubmit="return false;">
+      <input type="text" id="searchInput" placeholder="Search NRIC or UUID">
+      <input type="date" id="startDate">
+      <input type="date" id="endDate">
+      <button type="button" style="display:none;">Filter</button>
+      <button type="button" onclick="resetFilters()">Reset</button>
+    </form>
+    <table id="attendanceTable">
+      <thead>
+        <tr>
+          <th>NRIC</th>
+          <th>UUID</th>
+          <th>Timestamp</th>
+          
+          <th>Latitude</th>
+          <th>Longitude</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Data will be inserted here -->
+      </tbody>
+    </table>
+  </div>
+  <script>
+    async function fetchTable() {
+      const search = document.getElementById('searchInput').value;
+      const start = document.getElementById('startDate').value;
+      const end = document.getElementById('endDate').value;
+      const params = new URLSearchParams();
+      if (search) params.append('search', search);
+      if (start) params.append('start', start);
+      if (end) params.append('end', end);
+      const res = await fetch('/attendance/data?' + params.toString());
+      const data = await res.json();
+      const tbody = document.querySelector('#attendanceTable tbody');
+      tbody.innerHTML = '';
+      data.forEach(row => {
+        tbody.innerHTML += `<tr>
+          <td>${row.NRIC}</td>
+          <td>${row.UUID || ''}</td>
+          <td>${formatDate(row.Timestamp)}</td>
+          
+          <td>${row.Latitude ?? ''}</td>
+          <td>${row.Longitude ?? ''}</td>
+        </tr>`;
+      });
+    }
+    function resetFilters() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('startDate').value = '';
+      document.getElementById('endDate').value = '';
+      fetchTable();
+    }
+
+    function formatDate(ts) {
+      // Format as 'YYYY-MM-DD HH:mm:ss' without changing the time
+      if (!ts) return '';
+      // Remove T and anything after seconds
+      let str = ts.replace('T', ' ');
+      // Remove milliseconds and Z if present
+      str = str.replace(/\..*$/, '');
+      return str;
+    }
+
+    // Add event listeners for instant filtering
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('searchInput').addEventListener('input', fetchTable);
+      document.getElementById('startDate').addEventListener('change', fetchTable);
+      document.getElementById('endDate').addEventListener('change', fetchTable);
+      fetchTable();
+    });
+  </script>
+</body>
+</html>
