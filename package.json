@@ -12,7 +12,9 @@
     "ejs": "^3.1.10",
     "express": "^4.18.2",
     "express-session": "^1.18.2",
+    "jose": "^6.0.12",
     "mssql": "^9.3.2",
+    "openid-client": "^6.6.4",
     "qrcode": "^1.5.1",
     "uuid": "^9.0.0"
   }
