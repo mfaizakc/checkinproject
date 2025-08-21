@@ -105,7 +105,7 @@ router.get('/callback', async (req, res) => {
       console.log('Missing codeVerifier in session. Restarting flow.');
       return res.status(440).send('Session missing PKCE. Please <a href="/redirect">start again</a>.');
     }
-    const payload ={
+    const payload = {
       iss: CLIENT_ID,
       sub: CLIENT_ID,
       aud: TOKEN_URL,
@@ -113,7 +113,7 @@ router.get('/callback', async (req, res) => {
       iat: Math.floor(Date.now() / 1000),
     }
 
-    const header ={
+    const header = {
       alg: 'ES256',
       typ: 'JWT',
       kid: "sig-staffATT-2025"
@@ -125,7 +125,7 @@ router.get('/callback', async (req, res) => {
     const tokenPayload = {
       grant_type: 'authorization_code',
       code: receivedQueryParams.code,
-      client_assertion_type:'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
+      client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
       client_assertion: client_assertion,
       redirect_uri: REDIRECT_URI,
       client_id: CLIENT_ID,
@@ -158,21 +158,21 @@ router.get('/callback', async (req, res) => {
     console.log('Access token:', accessToken);
 
     async function decryptJWE() {
-    // Create a keystore and import the private key
-    const keystore = jose.JWK.createKeyStore();
-    const key = await keystore.add(encryptionKey, 'pem');
+      // Create a keystore and import the private key
+      const keystore = jose.JWK.createKeyStore();
+      const key = await keystore.add(encryptionKey, 'pem');
 
-    // Decrypt the JWE
-    const result = await jose.JWE.createDecrypt(key).decrypt(idToken);
+      // Decrypt the JWE
+      const result = await jose.JWE.createDecrypt(key).decrypt(idToken);
 
-    // Convert payload to string
-    const payload = result.payload.toString('utf8');
+      // Convert payload to string
+      const payload = result.payload.toString('utf8');
 
-    console.log('Header:', result.header);
-    console.log('Payload:', payload);
-    return payload;
-  }
-  
+      console.log('Header:', result.header);
+      console.log('Payload:', payload);
+      return payload;
+    }
+
 
     // Decode JWT access token (without verifying signature) for inspection
     let accessTokenPayload = null;
@@ -198,34 +198,9 @@ router.get('/callback', async (req, res) => {
             uuid = uuidMatch[1];
             console.log('Extracted UUID:', uuid);
           }
-          // Insert check-in event into database if NRIC is found
-          if (nric) {
-            try {
-              const pool = await db.pool;
-              // Check if user has checked in within the last hour
-              const checkResult = await pool.request()
-                .input('NRIC', db.sql.NVarChar(20), nric)
-                .query(`
-                  SELECT TOP 1 Timestamp 
-                  FROM CheckinEvents 
-                  WHERE NRIC = @NRIC 
-                    AND Timestamp > DATEADD(hour, -1, GETDATE())
-                  ORDER BY Timestamp DESC
-                `);
+          // Add this:
+          req.session.user = { nric, uuid };
 
-              if (checkResult.recordset.length > 0) {
-                console.log(`User ${nric} has already checked in within the last hour.`);
-              } else {
-                await pool.request()
-                  .input('NRIC', db.sql.NVarChar(20), nric)
-                  .input('UUID', db.sql.NVarChar(50), uuid)
-                  .query('INSERT INTO CheckinEvents (NRIC, UUID) VALUES (@NRIC, @UUID)');
-                console.log('Check-in event inserted for NRIC:', nric);
-              }
-            } catch (dbErr) {
-              console.error('Failed to insert check-in event:', dbErr);
-            }
-          }
         }
       } else {
         console.log('ID token is not a JWT.');
@@ -242,11 +217,42 @@ router.get('/callback', async (req, res) => {
   }
 });
 
-// Logout endpoint
-router.get('/logout', (req, res) => {
-  req.session.destroy(() => {
-    res.redirect('/');
-  });
+router.post('/checkin/location', async (req, res) => {
+  const { latitude, longitude } = req.body;
+  const user = req.session.user; // or however you store the authenticated user
+  if (!user || !user.nric) {
+    return res.status(401).send('Not authenticated');
+  }
+  try {
+    const pool = await db.pool;
+    // Check if user has checked in within the last hour
+    const checkResult = await pool.request()
+      .input('NRIC', db.sql.NVarChar(20), user.nric)
+      .query(`
+        SELECT TOP 1 Timestamp 
+        FROM CheckinEvents 
+        WHERE NRIC = @NRIC 
+          AND Timestamp > DATEADD(hour, -1, GETDATE())
+        ORDER BY Timestamp DESC
+      `);
+
+    if (checkResult.recordset.length > 0) {
+      console.log(`User ${user.nric} has already checked in within the last hour.`);
+      return res.status(200).send('Already checked in within the last hour.');
+    } else {
+      await pool.request()
+        .input('NRIC', db.sql.NVarChar(20), user.nric)
+        .input('UUID', db.sql.NVarChar(50), user.uuid)
+        .input('Latitude', db.sql.Float, latitude)
+        .input('Longitude', db.sql.Float, longitude)
+        .query('INSERT INTO CheckinEvents (NRIC, UUID, Latitude, Longitude) VALUES (@NRIC, @UUID, @Latitude, @Longitude)');
+      console.log('Check-in event inserted for NRIC:', user.nric, 'Latitude:', latitude, 'Longitude:', longitude);
+      return res.status(200).send('Check-in event inserted.');
+    }
+  } catch (err) {
+    console.error('Failed to save location:', err);
+    res.status(500).send('Failed to save location');
+  }
 });
 
 

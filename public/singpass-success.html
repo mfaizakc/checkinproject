@@ -22,5 +22,21 @@
     </div>
     <a href="/" class="btn">Go to Home</a>
   </div>
+  <script>
+if (navigator.geolocation) {
+  navigator.geolocation.getCurrentPosition(function(position) {
+    fetch('/checkin/location', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude
+      })
+    }).then(() => {
+      // Optionally show a message or reload
+    });
+  });
+}
+</script>
 </body>
 </html>
