@@ -234,16 +234,66 @@ router.post('/checkin/location', async (req, res) => {
   if (!user || !user.nric) {
     return res.status(401).send('Not authenticated');
   }
+  // Dictionary of locations with bounding boxes
+  const LOCATIONS = {
+    '64Hillview': {
+      minLat: Math.min(1.353179, 1.353193, 1.352909, 1.352895),
+      maxLat: Math.max(1.353179, 1.353193, 1.352909, 1.352895),
+      minLng: Math.min(103.756510, 103.756727, 103.756507, 103.756697),
+      maxLng: Math.max(103.756510, 103.756727, 103.756507, 103.756697)
+    },
+    '33Hillview': {
+      minLat: Math.min(1.352776, 1.352755, 1.352437, 1.352431),
+      maxLat: Math.max(1.352776, 1.352755, 1.352437, 1.352431),
+      minLng: Math.min(103.756790, 103.757431, 103.756745, 103.757399),
+      maxLng: Math.max(103.756790, 103.757431, 103.756745, 103.757399)
+    },
+    '6LokYang': {
+      minLat: Math.min(1.325662, 1.325657, 1.325247, 1.325251),
+      maxLat: Math.max(1.325662, 1.325657, 1.325247, 1.325251),
+      minLng: Math.min(103.689855, 103.690687, 103.689900, 103.690697),
+      maxLng: Math.max(103.689855, 103.690687, 103.689900, 103.690697)
+    },
+    '1Harrison': {
+      minLat: Math.min(1.334877, 1.334883, 1.334553, 1.334609),
+      maxLat: Math.max(1.334877, 1.334883, 1.334553, 1.334609),
+      minLng: Math.min(103.883979, 103.884429, 103.883907, 103.884268),
+      maxLng: Math.max(103.883979, 103.884429, 103.883907, 103.884268)
+    },
+    '2Woodlands': {
+      minLat: Math.min(1.454519, 1.454909, 1.453826, 1.454257),
+      maxLat: Math.max(1.454519, 1.454909, 1.453826, 1.454257),
+      minLng: Math.min(103.806641, 103.807425, 103.806970, 103.807759),
+      maxLng: Math.max(103.806641, 103.807425, 103.806970, 103.807759)
+    },
+    // Add more locations here
+    // 'AnotherPlace': { minLat: ..., maxLat: ..., minLng: ..., maxLng: ... }
+  };
+
+  function getLocationName(lat, lng) {
+    for (const [name, box] of Object.entries(LOCATIONS)) {
+      if (
+        lat >= box.minLat && lat <= box.maxLat &&
+        lng >= box.minLng && lng <= box.maxLng
+      ) {
+        return name;
+      }
+    }
+    return null;
+  }
+
+  let location = getLocationName(latitude, longitude);
   try {
-    const pool = await db.pool
-      await pool.request()
-        .input('NRIC', db.sql.NVarChar(20), user.nric)
-        .input('UUID', db.sql.NVarChar(50), user.uuid)
-        .input('Latitude', db.sql.Float, latitude)
-        .input('Longitude', db.sql.Float, longitude)
-        .query('INSERT INTO CheckinEvents (NRIC, UUID, Latitude, Longitude, Timestamp) VALUES (@NRIC, @UUID, @Latitude, @Longitude, GETUTCDATE())');
-      console.log('Check-in event inserted for NRIC:', user.nric, 'Latitude:', latitude, 'Longitude:', longitude);
-      return res.status(200).send('Check-in event inserted.');
+    const pool = await db.pool;
+    await pool.request()
+      .input('NRIC', db.sql.NVarChar(20), user.nric)
+      .input('UUID', db.sql.NVarChar(50), user.uuid)
+      .input('Latitude', db.sql.Float, latitude)
+      .input('Longitude', db.sql.Float, longitude)
+      .input('Location', db.sql.NVarChar(50), location)
+      .query('INSERT INTO CheckinEvents (NRIC, UUID, Latitude, Longitude, Location, Timestamp) VALUES (@NRIC, @UUID, @Latitude, @Longitude, @Location, GETDATE())');
+    console.log('Check-in event inserted for NRIC:', user.nric, 'Latitude:', latitude, 'Longitude:', longitude, 'Location:', location);
+    return res.status(200).send('Check-in event inserted.');
   } catch (err) {
     console.error('Failed to save location:', err);
     res.status(500).send('Failed to save location');

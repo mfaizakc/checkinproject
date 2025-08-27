@@ -70,9 +70,19 @@
   <div class="container">
     <h1>Attendance Records</h1>
     <form class="filter-bar" id="filterForm" onsubmit="return false;">
-      <input type="text" id="searchInput" placeholder="Search NRIC or UUID">
+  <input type="text" id="searchInput" placeholder="Search NRIC or Name">
       <input type="date" id="startDate">
       <input type="date" id="endDate">
+      <select id="locationFilter">
+        <option value="">All Locations</option>
+        <option value="64Hillview">64Hillview</option>
+        <option value="33Hillview">33Hillview</option>
+        <option value="6Lokyang">6Lokyang</option>
+        <option value="1Harrison">1Harrison</option>
+        <option value="2Woodlands">2Woodlands</option>
+
+        <!-- Add more options here as you add more locations in backend -->
+      </select>
       <button type="button" style="display:none;">Filter</button>
       <button type="button" onclick="resetFilters()">Reset</button>
     </form>
@@ -80,11 +90,13 @@
       <thead>
         <tr>
           <th>NRIC</th>
-          <th>UUID</th>
+          <th>Name</th>
+          <th>Department</th>
           <th>Timestamp</th>
           
           <th>Latitude</th>
           <th>Longitude</th>
+          <th>Location</th>
         </tr>
       </thead>
       <tbody>
@@ -97,22 +109,26 @@
       const search = document.getElementById('searchInput').value;
       const start = document.getElementById('startDate').value;
       const end = document.getElementById('endDate').value;
-      const params = new URLSearchParams();
-      if (search) params.append('search', search);
-      if (start) params.append('start', start);
-      if (end) params.append('end', end);
-      const res = await fetch('/attendance/data?' + params.toString());
+  const location = document.getElementById('locationFilter').value;
+  const params = new URLSearchParams();
+  if (search) params.append('search', search);
+  if (start) params.append('start', start);
+  if (end) params.append('end', end);
+  if (location) params.append('location', location);
+  const res = await fetch('/attendance/data?' + params.toString());
       const data = await res.json();
       const tbody = document.querySelector('#attendanceTable tbody');
       tbody.innerHTML = '';
       data.forEach(row => {
         tbody.innerHTML += `<tr>
           <td>${row.NRIC}</td>
-          <td>${row.UUID || ''}</td>
+          <td>${row.Fullname || ''}</td>
+          <td>${row.Department || ''}</td>
           <td>${formatDate(row.Timestamp)}</td>
           
           <td>${row.Latitude ?? ''}</td>
           <td>${row.Longitude ?? ''}</td>
+          <td>${row.Location ?? ''}</td>
         </tr>`;
       });
     }
@@ -135,10 +151,11 @@
 
     // Add event listeners for instant filtering
     document.addEventListener('DOMContentLoaded', function() {
-      document.getElementById('searchInput').addEventListener('input', fetchTable);
-      document.getElementById('startDate').addEventListener('change', fetchTable);
-      document.getElementById('endDate').addEventListener('change', fetchTable);
-      fetchTable();
+  document.getElementById('searchInput').addEventListener('input', fetchTable);
+  document.getElementById('startDate').addEventListener('change', fetchTable);
+  document.getElementById('endDate').addEventListener('change', fetchTable);
+  document.getElementById('locationFilter').addEventListener('change', fetchTable);
+  fetchTable();
     });
   </script>
 </body>
