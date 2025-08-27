@@ -7,6 +7,7 @@ const attRoutes = require('./routes/attendance');
 
 const app = express();
 const session = require('express-session');
+const flash = require('connect-flash');
 const isProduction = process.env.NODE_ENV === 'production';
 app.use(session({
   secret: 'your-very-secret-key',
@@ -18,6 +19,9 @@ app.use(session({
     httpOnly: true
   }
 }));
+
+// Enable flash messages
+app.use(flash());
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.set('trust proxy', true);

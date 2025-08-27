@@ -6,6 +6,8 @@
   <title>Attendance Records</title>
   <link rel="stylesheet" href="/attstyle.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap" rel="stylesheet">
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
   <style>
     .filter-bar {
       display: flex;
@@ -70,7 +72,7 @@
   <div class="container">
     <h1>Attendance Records</h1>
     <form class="filter-bar" id="filterForm" onsubmit="return false;">
-  <input type="text" id="searchInput" placeholder="Search NRIC or Name">
+  <input type="text" id="searchInput" placeholder="Search NRIC, Name, Dept">
       <input type="date" id="startDate">
       <input type="date" id="endDate">
       <select id="locationFilter">
@@ -104,34 +106,66 @@
       </tbody>
     </table>
   </div>
+  <!-- jQuery and DataTables JS -->
+  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
   <script>
+    function formatDate(ts) {
+      if (!ts) return '';
+      let str = ts.replace('T', ' ');
+      str = str.replace(/\..*$/, '');
+      return str;
+    }
+
+    function maskNRIC(nric) {
+      if (nric && nric.length > 4) {
+        const lastFour = nric.slice(-4);
+        return 'X'.repeat(nric.length - 4) + lastFour;
+      }
+      return nric || '';
+    }
+
     async function fetchTable() {
       const search = document.getElementById('searchInput').value;
       const start = document.getElementById('startDate').value;
       const end = document.getElementById('endDate').value;
-  const location = document.getElementById('locationFilter').value;
-  const params = new URLSearchParams();
-  if (search) params.append('search', search);
-  if (start) params.append('start', start);
-  if (end) params.append('end', end);
-  if (location) params.append('location', location);
-  const res = await fetch('/attendance/data?' + params.toString());
+      const location = document.getElementById('locationFilter').value;
+      const params = new URLSearchParams();
+      if (search) params.append('search', search);
+      if (start) params.append('start', start);
+      if (end) params.append('end', end);
+      if (location) params.append('location', location);
+      const res = await fetch('/attendance/data?' + params.toString());
       const data = await res.json();
       const tbody = document.querySelector('#attendanceTable tbody');
       tbody.innerHTML = '';
+      // Destroy DataTable before updating tbody to avoid issues
+      if ($.fn.DataTable.isDataTable('#attendanceTable')) {
+        $('#attendanceTable').DataTable().destroy();
+      }
+      tbody.innerHTML = '';
       data.forEach(row => {
         tbody.innerHTML += `<tr>
-          <td>${row.NRIC}</td>
+          <td>${maskNRIC(row.NRIC)}</td>
           <td>${row.Fullname || ''}</td>
           <td>${row.Department || ''}</td>
           <td>${formatDate(row.Timestamp)}</td>
-          
           <td>${row.Latitude ?? ''}</td>
           <td>${row.Longitude ?? ''}</td>
           <td>${row.Location ?? ''}</td>
         </tr>`;
       });
+      // Re-initialize DataTable after data is loaded
+      $('#attendanceTable').DataTable({
+        order: [[3, 'desc']],
+        pageLength: 25,
+        lengthMenu: [10, 25, 50, 100],
+        searching: false, // disable built-in search, use custom
+        info: true,
+        autoWidth: false
+      });
     }
+
     function resetFilters() {
       document.getElementById('searchInput').value = '';
       document.getElementById('startDate').value = '';
@@ -139,23 +173,19 @@
       fetchTable();
     }
 
-    function formatDate(ts) {
-      // Format as 'YYYY-MM-DD HH:mm:ss' without changing the time
-      if (!ts) return '';
-      // Remove T and anything after seconds
-      let str = ts.replace('T', ' ');
-      // Remove milliseconds and Z if present
-      str = str.replace(/\..*$/, '');
-      return str;
-    }
-
-    // Add event listeners for instant filtering
     document.addEventListener('DOMContentLoaded', function() {
-  document.getElementById('searchInput').addEventListener('input', fetchTable);
-  document.getElementById('startDate').addEventListener('change', fetchTable);
-  document.getElementById('endDate').addEventListener('change', fetchTable);
-  document.getElementById('locationFilter').addEventListener('change', fetchTable);
-  fetchTable();
+      // Set start date to today by default
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      document.getElementById('startDate').value = `${yyyy}-${mm}-${dd}`;
+
+      document.getElementById('searchInput').addEventListener('input', fetchTable);
+      document.getElementById('startDate').addEventListener('change', fetchTable);
+      document.getElementById('endDate').addEventListener('change', fetchTable);
+      document.getElementById('locationFilter').addEventListener('change', fetchTable);
+      fetchTable();
     });
   </script>
 </body>

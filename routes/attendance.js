@@ -1,6 +1,59 @@
 const express = require('express');
 const db = require('../db/db');
 const router = express.Router();
+const session = require('express-session');
+const flash = require('connect-flash');
+const checkLogined = (req, res, next) => {
+  if (req.session.user) {
+    return next();
+  } else {
+    req.flash('error', 'Please Login');
+    res.redirect('/loginPage');
+  }
+};
+
+router.get('/loginPage', (req, res) => {
+  res.render('login', { error: req.flash('error') });
+});
+
+router.get('/login',  async (req, res) => {
+const { username, password } = req.query;
+if (!username || !password) {
+    req.flash('error', 'All fields are required.');
+    return res.redirect('/loginPage');
+}
+
+// Sample user data (replace with DB lookup in production)
+const sampleUsers = [
+  { username: 'admin', password: 'admin123' },
+  { username: 'user', password: 'user123'}
+];
+const foundUser = sampleUsers.find(u => u.username === username && u.password === password);
+if (!foundUser) {
+  req.flash('error', 'Invalid username or password.');
+  return res.redirect('/loginPage');
+}
+
+// Set session user
+req.session.user = {
+  username: foundUser.username,
+  nric: foundUser.nric,
+};
+req.flash('success', 'Login successful!');
+return res.redirect('/attendance');
+});
+// LOGOUT ENDPOINT
+router.get('/logout', (req, res) => {
+  req.session.destroy(err => {
+    if (err) {
+      console.error('Logout error:', err);
+      req.flash('error', 'Logout failed.');
+      return res.redirect('/files');
+    }
+    res.clearCookie('connect.sid');
+    res.redirect('/loginPage');
+  });
+});
 
 function getSingaporeTimeISO() {
   const now = new Date();
@@ -14,7 +67,7 @@ function getSingaporeTimeISO() {
 }
 
 // Attendance page (table view)
-router.get('/attendance', (req, res) => {
+router.get('/attendance',checkLogined, (req, res) => {
   res.render('attendance');
 });
 
@@ -24,7 +77,7 @@ router.get('/attendance/data', async (req, res) => {
   let query = 'SELECT CheckinEvents.*, Staff.Fullname, Staff.Department FROM CheckinEvents INNER JOIN Staff ON CheckinEvents.NRIC = Staff.NRIC WHERE 1=1';
   const params = [];
   if (search) {
-    query += ' AND (NRIC LIKE @search OR Name LIKE @search)';
+    query += ' AND (CheckinEvents.NRIC LIKE @search OR Staff.Fullname LIKE @search OR Staff.Department LIKE @search)';
     params.push({ name: 'search', type: db.sql.NVarChar(50), value: `%${search}%` });
   }
   if (location) {
