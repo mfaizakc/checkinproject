@@ -1,151 +1,174 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Attendance Records</title>
-  <link rel="stylesheet" href="/attstyle.css">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap" rel="stylesheet">
-  <!-- DataTables CSS -->
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
-  <style>
-    .filter-bar {
-      display: flex;
-      gap: 16px;
-      margin-bottom: 24px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-    .filter-bar input, .filter-bar button {
-      padding: 8px 12px;
-      border-radius: 4px;
-      border: 1px solid #444;
-      font-size: 15px;
-      font-family: 'Poppins', Arial, Helvetica, sans-serif;
-      background: #23272f;
-      color: #f5f6fa;
-    }
-    /* Make icons in filter bar white */
-    .filter-bar input[type="date"]::-webkit-calendar-picker-indicator,
-    .filter-bar input[type="search"]::-webkit-search-cancel-button,
-    .filter-bar input[type="search"]::-webkit-search-decoration {
-      filter: invert(1);
-    }
-    .filter-bar input[type="date"]::-ms-input-placeholder,
-    .filter-bar input[type="date"]::placeholder {
-      color: #f5f6fa;
-    }
-    .filter-bar button {
-      background: #F4333D;
-      color: #fff;
-      border: none;
-      font-weight: 700;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .filter-bar button:hover {
-      background: #ff232e;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 12px;
-      background: #23272f;
-      color: #f5f6fa;
-      font-family: 'Poppins', Arial, Helvetica, sans-serif;
-    }
-    th, td {
-      padding: 10px 8px;
-      border-bottom: 1px solid #444;
-      text-align: left;
-    }
-    th {
-      background: #18191a;
-      font-weight: 700;
-    }
-    tr:last-child td {
-      border-bottom: none;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Records</title>
+    <link rel="stylesheet" href="/attstyle.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap" rel="stylesheet">
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+    <!-- Font Awesome for logout icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        .filter-bar {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-bar input,
+        .filter-bar button {
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #444;
+            font-size: 15px;
+            font-family: 'Poppins', Arial, Helvetica, sans-serif;
+            background: #23272f;
+            color: #f5f6fa;
+        }
+
+        /* Make icons in filter bar white */
+        .filter-bar input[type="date"]::-webkit-calendar-picker-indicator,
+        .filter-bar input[type="search"]::-webkit-search-cancel-button,
+        .filter-bar input[type="search"]::-webkit-search-decoration {
+            filter: invert(1);
+        }
+
+        .filter-bar input[type="date"]::-ms-input-placeholder,
+        .filter-bar input[type="date"]::placeholder {
+            color: #f5f6fa;
+        }
+
+        .filter-bar button {
+            background: #F4333D;
+            color: #fff;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .filter-bar button:hover {
+            background: #ff232e;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            background: #23272f;
+            color: #f5f6fa;
+            font-family: 'Poppins', Arial, Helvetica, sans-serif;
+        }
+
+        th,
+        td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #444;
+            text-align: left;
+        }
+
+        th {
+            background: #18191a;
+            font-weight: 700;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+    </style>
 </head>
+
 <body>
-  <div class="container">
-    <h1>Attendance Records</h1>
-    <form class="filter-bar" id="filterForm" onsubmit="return false;">
-  <input type="text" id="searchInput" placeholder="Search NRIC, Name, Dept">
-      <input type="date" id="startDate">
-      <input type="date" id="endDate">
-      <select id="locationFilter">
-        <option value="">All Locations</option>
-        <option value="64Hillview">64Hillview</option>
-        <option value="33Hillview">33Hillview</option>
-        <option value="6Lokyang">6Lokyang</option>
-        <option value="1Harrison">1Harrison</option>
-        <option value="2Woodlands">2Woodlands</option>
+    <div class="container">
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+            <a href="/logout" class="btn btn-danger"
+                style="background: #F4333D; color: #fff; font-weight: 700; border: none; padding: 8px 18px; border-radius: 4px; text-decoration: none; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+        <div style="text-align: center; margin-bottom: 10px;">
+            <h1>Attendance Records</h1>
+        </div>
+        <form class="filter-bar" id="filterForm" onsubmit="return false;">
+            <input type="text" id="searchInput" placeholder="Search NRIC, Name, Dept">
+            <input type="date" id="startDate">
+            <input type="date" id="endDate">
+            <select id="locationFilter">
+                <option value="">All Locations</option>
+                <option value="64Hillview">64Hillview</option>
+                <option value="33Hillview">33Hillview</option>
+                <option value="6Lokyang">6Lokyang</option>
+                <option value="1Harrison">1Harrison</option>
+                <option value="2Woodlands">2Woodlands</option>
 
-        <!-- Add more options here as you add more locations in backend -->
-      </select>
-      <button type="button" style="display:none;">Filter</button>
-      <button type="button" onclick="resetFilters()">Reset</button>
-    </form>
-    <table id="attendanceTable">
-      <thead>
-        <tr>
-          <th>NRIC</th>
-          <th>Name</th>
-          <th>Department</th>
-          <th>Timestamp</th>
-          
-          <th>Latitude</th>
-          <th>Longitude</th>
-          <th>Location</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- Data will be inserted here -->
-      </tbody>
-    </table>
-  </div>
-  <!-- jQuery and DataTables JS -->
-  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-  <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-  <script>
-    function formatDate(ts) {
-      if (!ts) return '';
-      let str = ts.replace('T', ' ');
-      str = str.replace(/\..*$/, '');
-      return str;
-    }
+                <!-- Add more options here as you add more locations in backend -->
+            </select>
+            <button type="button" style="display:none;">Filter</button>
+            <button type="button" onclick="resetFilters()">Reset</button>
+        </form>
+        <table id="attendanceTable">
+            <thead>
+                <tr>
+                    <th>NRIC</th>
+                    <th>Name</th>
+                    <th>Department</th>
+                    <th>Timestamp</th>
 
-    function maskNRIC(nric) {
-      if (nric && nric.length > 4) {
-        const lastFour = nric.slice(-4);
-        return 'X'.repeat(nric.length - 4) + lastFour;
-      }
-      return nric || '';
-    }
+                    <th>Latitude</th>
+                    <th>Longitude</th>
+                    <th>Location</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will be inserted here -->
+            </tbody>
+        </table>
+    </div>
+    <!-- jQuery and DataTables JS -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script>
+        function formatDate(ts) {
+            if (!ts) return '';
+            let str = ts.replace('T', ' ');
+            str = str.replace(/\..*$/, '');
+            return str;
+        }
 
-    async function fetchTable() {
-      const search = document.getElementById('searchInput').value;
-      const start = document.getElementById('startDate').value;
-      const end = document.getElementById('endDate').value;
-      const location = document.getElementById('locationFilter').value;
-      const params = new URLSearchParams();
-      if (search) params.append('search', search);
-      if (start) params.append('start', start);
-      if (end) params.append('end', end);
-      if (location) params.append('location', location);
-      const res = await fetch('/attendance/data?' + params.toString());
-      const data = await res.json();
-      const tbody = document.querySelector('#attendanceTable tbody');
-      tbody.innerHTML = '';
-      // Destroy DataTable before updating tbody to avoid issues
-      if ($.fn.DataTable.isDataTable('#attendanceTable')) {
-        $('#attendanceTable').DataTable().destroy();
-      }
-      tbody.innerHTML = '';
-      data.forEach(row => {
-        tbody.innerHTML += `<tr>
+        function maskNRIC(nric) {
+            if (nric && nric.length > 4) {
+                const lastFour = nric.slice(-4);
+                return 'X'.repeat(nric.length - 4) + lastFour;
+            }
+            return nric || '';
+        }
+
+        async function fetchTable() {
+            const search = document.getElementById('searchInput').value;
+            const start = document.getElementById('startDate').value;
+            const end = document.getElementById('endDate').value;
+            const location = document.getElementById('locationFilter').value;
+            const params = new URLSearchParams();
+            if (search) params.append('search', search);
+            if (start) params.append('start', start);
+            if (end) params.append('end', end);
+            if (location) params.append('location', location);
+            const res = await fetch('/attendance/data?' + params.toString());
+            const data = await res.json();
+            const tbody = document.querySelector('#attendanceTable tbody');
+            tbody.innerHTML = '';
+            // Destroy DataTable before updating tbody to avoid issues
+            if ($.fn.DataTable.isDataTable('#attendanceTable')) {
+                $('#attendanceTable').DataTable().destroy();
+            }
+            tbody.innerHTML = '';
+            data.forEach(row => {
+                tbody.innerHTML += `<tr>
           <td>${maskNRIC(row.NRIC)}</td>
           <td>${row.Fullname || ''}</td>
           <td>${row.Department || ''}</td>
@@ -154,39 +177,40 @@
           <td>${row.Longitude ?? ''}</td>
           <td>${row.Location ?? ''}</td>
         </tr>`;
-      });
-      // Re-initialize DataTable after data is loaded
-      $('#attendanceTable').DataTable({
-        order: [[3, 'desc']],
-        pageLength: 25,
-        lengthMenu: [10, 25, 50, 100],
-        searching: false, // disable built-in search, use custom
-        info: true,
-        autoWidth: false
-      });
-    }
+            });
+            // Re-initialize DataTable after data is loaded
+            $('#attendanceTable').DataTable({
+                order: [[3, 'desc']],
+                pageLength: 25,
+                lengthMenu: [10, 25, 50, 100],
+                searching: false, // disable built-in search, use custom
+                info: true,
+                autoWidth: false
+            });
+        }
 
-    function resetFilters() {
-      document.getElementById('searchInput').value = '';
-      document.getElementById('startDate').value = '';
-      document.getElementById('endDate').value = '';
-      fetchTable();
-    }
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            fetchTable();
+        }
 
-    document.addEventListener('DOMContentLoaded', function() {
-      // Set start date to today by default
-      const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, '0');
-      const dd = String(today.getDate()).padStart(2, '0');
-      document.getElementById('startDate').value = `${yyyy}-${mm}-${dd}`;
+        document.addEventListener('DOMContentLoaded', function () {
+            // Set start date to today by default
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            document.getElementById('startDate').value = `${yyyy}-${mm}-${dd}`;
 
-      document.getElementById('searchInput').addEventListener('input', fetchTable);
-      document.getElementById('startDate').addEventListener('change', fetchTable);
-      document.getElementById('endDate').addEventListener('change', fetchTable);
-      document.getElementById('locationFilter').addEventListener('change', fetchTable);
-      fetchTable();
-    });
-  </script>
+            document.getElementById('searchInput').addEventListener('input', fetchTable);
+            document.getElementById('startDate').addEventListener('change', fetchTable);
+            document.getElementById('endDate').addEventListener('change', fetchTable);
+            document.getElementById('locationFilter').addEventListener('change', fetchTable);
+            fetchTable();
+        });
+    </script>
 </body>
+
 </html>
