@@ -113,4 +113,51 @@ router.get('/attendance/data', async (req, res) => {
   }
 });
 
+
+// Add Staff page (GET) - show all staff
+router.get('/add-staff', checkLogined, async (req, res) => {
+  try {
+    const pool = await db.pool;
+    const result = await pool.request().query('SELECT NRIC, Fullname, Department, [Mon-Fri] FROM Staff ORDER BY Fullname');
+    res.render('add-staff', {
+      error: req.flash('error'),
+      success: req.flash('success'),
+      staffList: result.recordset
+    });
+  } catch (err) {
+    res.render('add-staff', {
+      error: ['Failed to load staff list.'],
+      success: [],
+      staffList: []
+    });
+  }
+});
+
+// Add Staff handler (POST)
+router.post('/add-staff', checkLogined, async (req, res) => {
+  const { nric, fullname, department, monfri } = req.body;
+  if (!nric || !fullname || !department) {
+    req.flash('error', 'All fields are required.');
+    return res.redirect('/add-staff');
+  }
+  try {
+    const pool = await db.pool;
+    await pool.request()
+      .input('NRIC', db.sql.NVarChar(10), nric)
+      .input('Fullname', db.sql.NVarChar(100), fullname)
+      .input('Department', db.sql.NVarChar(50), department)
+      .input('MonFri', db.sql.Bit, monfri ? 1 : 0)
+      .query('INSERT INTO Staff (NRIC, Fullname, Department, [Mon-Fri]) VALUES (@NRIC, @Fullname, @Department, @MonFri)');
+    req.flash('success', 'Staff added successfully!');
+    return res.redirect('/add-staff');
+  } catch (err) {
+    if (err && err.originalError && err.originalError.info && err.originalError.info.number === 2627) {
+      req.flash('error', 'NRIC already exists.');
+    } else {
+      req.flash('error', 'Failed to add staff.');
+    }
+    return res.redirect('/add-staff');
+  }
+});
+
 module.exports = router;
