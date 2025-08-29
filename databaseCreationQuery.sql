@@ -1,11 +1,13 @@
 DROP TABLE IF EXISTS CheckinEvents;
 DROP TABLE IF EXISTS Staff;
+DROP TABLE IF EXISTS AdminUser;
 
 -- Staff table
 CREATE TABLE Staff (
     NRIC NVARCHAR(10) PRIMARY KEY,
     Fullname NVARCHAR(100) NOT NULL,
-	Department NVARCHAR(50) NOT NULL
+	Department NVARCHAR(50) NOT NULL,
+	[Mon-Fri] BIT NOT NULL
 );
 
 -- CheckinEvents table with foreign key to Staff.NRIC
@@ -22,4 +24,9 @@ CREATE TABLE CheckinEvents (
         REFERENCES Staff(NRIC)
         ON DELETE CASCADE
         ON UPDATE CASCADE
+);
+CREATE TABLE AdminUser (
+    UserId INT IDENTITY PRIMARY KEY,
+    UserName NVARCHAR(50) NOT NULL,
+	UserPassword NVARCHAR(50) NOT NULL
 );
